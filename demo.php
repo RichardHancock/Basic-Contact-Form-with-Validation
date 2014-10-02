@@ -140,7 +140,7 @@
 				if($errors['name']) {
 					echo('class="error" placeholder="'.$errorStrings["name"].'">');
 				} else {
-					echo('class="formInput" placeholder="Name">');
+					echo('class="formInput" placeholder="Name" value="'.$name.'">');
 				}
 			?>
 		</label><br>
@@ -151,7 +151,7 @@
 				if($errors['email']) {
 					echo('class="error" placeholder="'.$errorStrings["email"].'">');
 				} else {
-					echo('class="formInput" placeholder="Email">');
+					echo('class="formInput" placeholder="Email" value="'.$email.'">');
 				}
 			?>
 		</label><br>
@@ -162,7 +162,7 @@
 				if($errors['subject']) {
 					echo('class="error" placeholder="'.$errorStrings["subject"].'">');
 				} else {
-					echo('class="formInput" placeholder="Subject">');
+					echo('class="formInput" placeholder="Subject" value="'.$subject.'">');
 				}
 			?>
 		</label><br>
@@ -173,7 +173,7 @@
 				if($errors['message']) {
 					echo('class="error" placeholder="'.$errorStrings["message"].'"></textarea>');
 				} else {
-					echo('class="formInput" placeholder="Message"></textarea>');
+					echo('class="formInput" placeholder="Message">'.$message.'</textarea>');
 				}
 			?>
 			
