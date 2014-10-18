@@ -9,6 +9,29 @@
 	<h1>Contact Form Demo Page</h1>
 
 	<?php
+		
+		// type of form input; isTextarea is a bool which handles a special case
+		function displayFormError($type, $isTextarea)
+		{
+			global $errors, $errorStrings, $formData;
+			
+			if($isTextarea) {
+				if($errors[$type]) {
+					$returnString = 'class="error" placeholder="'.$errorStrings[$type].'"></textarea>';
+				} else {
+					$returnString = 'class="formInput" placeholder="'.$type.'">'.$formData[$type].'</textarea>';
+				}
+			} else {
+				if($errors[$type]) {
+					$returnString = 'class="error" placeholder="'.$errorStrings[$type].'">';
+				} else {
+					$returnString = 'class="formInput" placeholder="'.$type.'" value="'.$formData[$type].'">';
+				}
+			}
+			return $returnString;
+		}
+	
+	
 		if (isset($_POST["Submitted"]))
 		{
 			//Functions
@@ -22,26 +45,25 @@
 					return true;
 				}
 			}
+			
+		//Initialize Error bool array
+		$errors = array(
+			'Name' => false,
+			'Email' => false,
+			'Subject' => false,
+			'Message' => false,
+			'Captcha' => false,
+		);
 
-			//Initialize Error bool array
-			$errors = array(
-				'name' => false,
-				'email' => false,
-				'subject' => false,
-				'message' => false,
-				'captcha' => false,
-				 );
-
-			//Initialize error message array
-			$errorStrings = array(
-				'name' => "Please insert your name", 
-				'email' => "Please insert a valid email address",
-				'subject' => "Please insert a subject",
-				'message' => "Please insert a message",
-				'captcha' => "", //Gets generated later by the captcha php
-			);
-
-
+		//Initialize error message array
+		$errorStrings = array(
+			'Name' => "Please insert your name", 
+			'Email' => "Please insert a valid email address",
+			'Subject' => "Please insert a subject",
+			'Message' => "Please insert a message",
+			'Captcha' => "", //Gets generated later by the captcha php
+		);
+			
 			//Recaptcha required code:
 			require_once('recaptchalib.php');
 			$privatekey = ""; //CHANGE THIS to your own key
@@ -54,55 +76,53 @@
 			    // What happens when the CAPTCHA was entered incorrectly
 			    //die ("The reCAPTCHA wasn't entered correctly. Go back and try it again." .
 			         //"(reCAPTCHA said: " . $resp->error . ")");
-				$errors['captcha'] = true;
-				if ($resp->error == "incorrect-captcha-sol") 
-				{
-					$errorStrings['captcha'] = "Incorrect captcha was entered";
+				$errors['Captcha'] = true;
+				
+				//Bit lazy but couldn't find a reliable source stating the error codes, but this is good enough for users of the form
+				if ($resp->error == "incorrect-captcha-sol") {
+					$errorStrings['Captcha'] = "Incorrect captcha was entered";
 				} else {
-					$errorStrings['captcha'] = "An unknown error within captcha has occurred";
+					$errorStrings['Captcha'] = "An unknown server error within captcha has occurred!";
+					error_log("Server Captcha Error occured",0); //Log an event
 				}
 			}
-
-			//Fetch Value from the forms POST data
-			$name = $_POST["Name"];
-			$email = $_POST["Email"];
-			$subject = $_POST["Subject"];
-			$message = $_POST["Message"];
-
+			
+			//Fetch Value from the forms POST data		
+			$formData = array(
+				'Name' => $_POST["Name"],
+				'Email' => $_POST["Email"],
+				'Subject' => $_POST["Subject"],
+				'Message' => $_POST["Message"],
+			);
+			
 			$mailTo = ""; // CHANGE THIS to your own email address
 
 			//Error checking section
-			//Section might be able to be improved like this: $errors['name'] = !hasContent($name);
-			if (hasContent($name) == false)
+			//Section might be able to be improved like this: $errors['name'] = !hasContent($name), Would need to add $errorCount++ to hasContent function
+			$errorCount = 0;
+			if (!hasContent($formData['Name']))
 			{
-				$errors['name'] = true;
+				$errorCount++;
+				$errors['Name'] = true;
 			}
 
 			// This should check most emails but might not accept rarer email formats.
-			if (hasContent($email) == false || !preg_match('/^([A-Z0-9\.\-_]+)@([A-Z0-9\.\-_]+)?([\.]{1})([A-Z]{2,6})$/i',$email)) 
+			if (!hasContent($formData['Email']) || !preg_match('/^([A-Z0-9\.\-_]+)@([A-Z0-9\.\-_]+)?([\.]{1})([A-Z]{2,6})$/i',$formData['Email'] ) ) 
 			{
-				$errors['email'] = true;
+				$errorCount++;
+				$errors['Email'] = true;
 			}
 
-			if (hasContent($subject) == false) 
+			if (!hasContent($formData['Subject']))
 			{
-				$errors['subject'] = true;
+				$errorCount++;
+				$errors['Subject'] = true;
 			}
 
-			if (hasContent($message) == false)
+			if (!hasContent($formData['Message']))
 			{
-				$errors['message'] = true;
-			}
-
-
-			$errorCount = 0;
-
-			foreach ($errors as $key => $value) {
-				
-				if ($value == true) {
-					$errorCount++;
-				}
-			
+				$errorCount++;
+				$errors['Message'] = true;
 			}
 
 			// Final check and Email Sender
@@ -111,16 +131,16 @@
 				//Email Construction
 				$headers  = 'MIME-Version: 1.0' . "\r\n";
 				$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
-				$headers .= 'From: '.$email."\r\n";
-				$headers .= 'Reply-To: '.$email."\r\n";
+				$headers .= 'From: '.$formData['Email']."\r\n";
+				$headers .= 'Reply-To: '.$formData['Email']."\r\n";
 
-				$body = "<html><body><b>Name:</b>".$name."<br>";
-				$body .= "<b>Email:</b>".$email."<br>";
+				$body = "<html><body><b>Name:</b>".$formData['Name']."<br>";
+				$body .= "<b>Email:</b>".$formData['Email']."<br>";
 				$body .= "<b>Message:</b>"."<br>";
-				$body .= $message."<br></body></html>";
+				$body .= $formData['Message']."<br></body></html>";
 
 				//CF is a tag you can set you mail program to auto allow
-				$finalSubject = "CF: ".$subject;
+				$finalSubject = "CF: ".$formData['Subject'];
 
 				$result = 0;
 				if (mail($mailTo, $finalSubject, $body, $headers)) {
@@ -135,48 +155,19 @@
 
 	<form action="demo.php" method="post">
 		<label>
-			Name: <input required type="text" name="Name" 
-			<?php 
-				if($errors['name']) {
-					echo('class="error" placeholder="'.$errorStrings["name"].'">');
-				} else {
-					echo('class="formInput" placeholder="Name" value="'.$name.'">');
-				}
-			?>
+			Name: <input required type="text" name="Name" <?php echo(displayFormError('Name',false)); ?>
 		</label><br>
 
 		<label>
-			Email: <input required type="email" name="Email" 
-			<?php 
-				if($errors['email']) {
-					echo('class="error" placeholder="'.$errorStrings["email"].'">');
-				} else {
-					echo('class="formInput" placeholder="Email" value="'.$email.'">');
-				}
-			?>
+			Email: <input required type="email" name="Email" <?php echo(displayFormError('Email',false)); ?>
 		</label><br>
 
 		<label>
-			Subject: <input required type="text" name="Subject" 
-			<?php 
-				if($errors['subject']) {
-					echo('class="error" placeholder="'.$errorStrings["subject"].'">');
-				} else {
-					echo('class="formInput" placeholder="Subject" value="'.$subject.'">');
-				}
-			?>
+			Subject: <input required type="text" name="Subject" <?php echo(displayFormError('Subject',false)); ?>
 		</label><br>
 		
 		<label>
-			Message: <textarea required name="Message" 
-			<?php 
-				if($errors['message']) {
-					echo('class="error" placeholder="'.$errorStrings["message"].'"></textarea>');
-				} else {
-					echo('class="formInput" placeholder="Message">'.$message.'</textarea>');
-				}
-			?>
-			
+			Message: <textarea required name="Message" <?php echo(displayFormError('Message',true)); ?>
 		</label><br>
 
 		<?php
@@ -189,8 +180,8 @@
 		<input type="submit" name="Submit" value="Submit"><br>
 		<span class="formResult">
 			<?php 
-				if($errors['captcha']) {
-					echo($errorStrings['captcha']);
+				if($errors['Captcha']) {
+					echo($errorStrings['Captcha']);
 				} elseif ($errorCount != 0) {
 					echo("Please fix any mistakes and resubmit");
 				} elseif ($result == 2) {
